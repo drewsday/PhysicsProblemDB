@@ -6,7 +6,7 @@
 <head>
 	<meta charset="UTF-8">
 	<title>@yield('title')</title>
-	{{ HTML::style('css/style.css') }}
+	{{ HTML::style('bootstrap/css/bootstrap.css') }}
 </head>
 <body>
 	<div class="header">
