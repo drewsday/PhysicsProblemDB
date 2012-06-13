@@ -45,59 +45,97 @@ Route::get('admin', function(){
 		echo ".";
 });
 
-Route::get('login', function() {
 
-	// display the view with the login form
-	return View::make('pages.login');
+/*____________________________________________
+| login routes                                |
+______________________________________________*/
+// both login and newuser are registered with the admin.account route
 
-});
+// New user routes______________________________________________
+// this defines admin/account/newuser and takes care of the form
 
-Route::get('newuser', function(){
-		return VIEW::make('pages.newuser');
-});
+Route::Controller('admin.account');
 
-Route::post('newuser', function(){
-		$input=Input::all();
-		$rules=array(
-			'username' => 'required|unique:users',
-			'password' => 'required|confirmed',
-			'email' => 'unique:users|email|required'
-			);
-		$validation=Validator::make($input, $rules);
-		if ($validation->fails())
+
+
+// route for adding problems
+
+Route::Controller('problems');
+
+Route::get('addproblem', function()
+	{
+		// get the formats, types, and levels to populate selectors
+		$formats=Problemformat::get();
+		$formatstopass=array();
+		foreach ($formats AS $format)
 		{
-			return Redirect::to('newuser')->with_input()->with_errors($validation);
-		} else {
-			$hpassword=Hash::make(Input::get('password'));
-			$user = new User(array(
-				'username' => Input::get('username'),
-				'password' => $hpassword,
-				'firstname' => Input::get('firstname'),
-				'lastname' => Input::get('lastname'),
-				'email' => Input::get('email'),
-				'institution' => Input::get('institution'),
-				'address' => Input::get('address'),
-				'address2' => Input::get('address2'),
-				'city' => Input::get('city'),
-				'state' => Input::get('state'),
-				'zip' => Input::get('zip'),
-				'country' => Input::get('country')
-				));
-			$user->save();
+			$id=$format->id;
+			$form=$format->format;
+			$formatstopass[$id] = $form;
+		};
+		
+		$types=Problemtype::get();
+		$typestopass=array();
+		foreach ($types AS $type)
+		{
+			$typestopass[$type->id]=$type->type;
+		};
+		$levels=Problemlevel::get();
+		$levelstopass=array();
+		foreach ($levels AS $level)
+		{
+			$levelstopass[$level->id]=$level->level;
+		};
+		//$levels=Problemlevel::get(array('level'));
+		return View::make('pages.addproblem')
+			->with('formats', $formatstopass)
+			->with('levels', $levelstopass)
+			->with('types', $typestopass);
+	}
+	);
+
+// quick page to populate type, format etc tables
+
+Route::get('formats', function(){
+		$formats=array(
+			"multiple choice",
+			"true/false",
+			"free response"
+			);
+		foreach ($formats AS $format)
+		{
+			$for=Problemformat::create(array('format'=>$format));
 		};
 });
 
-Route::get('check', function() {
-		
-		$u1=User::find(1);
-		print_r($u1->to_array());
-		$cred=array('username'=>'Andy', 'password'=>'hithere');
-		If (Auth::attempt($cred)){
-			echo "yep";
-		} else {
-			echo "nope";
-};});
+Route::get('types', function(){
+		$formats=array(
+			"numerical",
+			"conceptual"
+			);
+		foreach ($formats AS $format)
+		{
+			$for=Problemtype::create(array('type'=>$format));
+		};
+});
 
+Route::get('levels', function(){
+		$formats=array(
+			"physical science",
+			"conceptual physics",
+			"AP physics",
+			"calc-based",
+			"upper division"
+			);
+		foreach ($formats AS $format)
+		{
+			$for=Problemlevel::create(array('level'=>$format));
+		};
+});
+
+// some quick tester routes_________________________________________
+
+/* this one only works with my simple schema
 Route::get('insertproblem', function() {
 		$rand=rand();
 		$prob = array(
@@ -106,7 +144,9 @@ Route::get('insertproblem', function() {
 		$user = User::find(1);
 		$user->problems()->insert($prob);
 });
+*/
 
+/* this one only works with my simple schema
 Route::get('inserttag', array('before' => 'auth', function() {
 			$rand=rand();
 			$tag = array(
@@ -117,7 +157,9 @@ Route::get('inserttag', array('before' => 'auth', function() {
 			$prob->tags()->insert($tag);
 		
 }));
+*/
 
+/* only works with my simple schema
 Route::get('listproblems', array('before' => 'auth', function() {
 		$uid=Auth::user()->id;
 		$user=User::find($uid);
@@ -133,33 +175,8 @@ Route::get('listproblems', array('before' => 'auth', function() {
 			echo "<br/>";
 		};
 }));
+*/
 
-Route::post('login', function() {
-
-	// get the username and password from the POST
-	// data using the Input class
-	$username = Input::get('username');
-	$password = Input::get('password');
-
-	// call Auth::attempt() on the username and password
-	// to try to login, the session will be created
-	// automatically on success
-	$credentials=array('username'=>$username, 'password'=>$password);
-	if ( Auth::attempt($credentials) )
-	{
-		// it worked, redirect to the admin route
-		return Redirect::to('admin');
-	}
-	else
-	{
-		// login failed, show the form again and
-		// use the login_errors data to show that
-		// an error occured
-		return Redirect::to('login')
-			->with('login_errors', true);
-	}
-
-});
 
 /*
 |--------------------------------------------------------------------------
@@ -231,5 +248,5 @@ Route::filter('csrf', function()
 
 Route::filter('auth', function()
 {
-	if (Auth::guest()) return Redirect::to('login');
+	if (Auth::guest()) return Redirect::to('admin/account/login');
 });
